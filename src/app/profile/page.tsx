@@ -26,30 +26,89 @@ type FormData = z.infer<typeof schema>;
 
 export default function ProfilePage() {
   const [result, setResult] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const router = useRouter();
+
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      name: "Test Kullanıcı",
-      email: "test@example.com",
-      password: "",
-    },
+    defaultValues: { name: "", email: "", password: "" },
   });
 
   useEffect(() => {
-    const authStatus = localStorage.getItem("isAuthenticated");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    } else {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsAuthenticated(false);
+      router.push("/login");
+      return;
+    }
+
+    fetchUserData(token);
+  }, [router]);
+
+  const fetchUserData = async (token: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data.user);
+        form.reset({
+          name: data.user.name,
+          email: data.user.email,
+          password: "",
+        });
+        setIsAuthenticated(true);
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setIsAuthenticated(false);
+        router.push("/login");
+      }
+    } catch (error) {
       setIsAuthenticated(false);
       router.push("/login");
     }
-  }, [router]);
+  };
 
-  function onSubmit(data: FormData) {
-    setResult("Profil başarıyla güncellendi!");
-    form.reset({ ...data, password: "" });
+  async function onSubmit(data: FormData) {
+    setIsLoading(true);
+    setResult(null);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setResult("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setResult("Profil başarıyla güncellendi!");
+        setUserData(result.user);
+        form.reset({ ...data, password: "" });
+      } else {
+        setResult(result.error || "Güncelleme sırasında bir hata oluştu");
+      }
+    } catch (error) {
+      setResult("Sunucu hatası oluştu");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   if (isAuthenticated === null) {
@@ -68,6 +127,14 @@ export default function ProfilePage() {
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md p-6">
         <h2 className="text-2xl font-bold mb-6 text-center">Profil Düzenle</h2>
+        {userData && (
+          <div className="mb-4 p-3 bg-gray-100 rounded">
+            <p className="text-sm text-gray-600">
+              Kayıt Tarihi:{" "}
+              {new Date(userData.createdAt).toLocaleDateString("tr-TR")}
+            </p>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -113,11 +180,19 @@ export default function ProfilePage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Profili Güncelle
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Güncelleniyor..." : "Profili Güncelle"}
             </Button>
             {result && (
-              <div className="text-green-600 text-center mt-2">{result}</div>
+              <div
+                className={
+                  result.includes("başarıyla")
+                    ? "text-green-600 text-center mt-2"
+                    : "text-red-600 text-center mt-2"
+                }
+              >
+                {result}
+              </div>
             )}
           </form>
         </Form>

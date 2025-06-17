@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const schema = z
   .object({
@@ -35,14 +36,44 @@ type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
   const [result, setResult] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
-  function onSubmit(data: FormData) {
-    setResult("Kayıt başarılı!");
-    form.reset();
+  async function onSubmit(data: FormData) {
+    setIsLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setResult("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...");
+        form.reset();
+        setTimeout(() => {
+          router.push("/login");
+        }, 100);
+      } else {
+        setResult(result.error || "Kayıt sırasında bir hata oluştu");
+      }
+    } catch (error) {
+      setResult("Sunucu hatası oluştu");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -107,11 +138,19 @@ export default function RegisterPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Kayıt Ol
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Kayıt Olunuyor..." : "Kayıt Ol"}
             </Button>
             {result && (
-              <div className="text-green-600 text-center mt-2">{result}</div>
+              <div
+                className={
+                  result.includes("başarılı")
+                    ? "text-green-600 text-center mt-2"
+                    : "text-red-600 text-center mt-2"
+                }
+              >
+                {result}
+              </div>
             )}
           </form>
         </Form>

@@ -25,23 +25,41 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
   const [result, setResult] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
 
-  function onSubmit(data: FormData) {
-    if (data.email === "test@example.com" && data.password === "Test1234") {
-      setResult("Giriş başarılı! Yönlendiriliyorsunuz...");
-      localStorage.setItem("isAuthenticated", "true");
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
-    } else {
-      setResult("Email veya şifre hatalı!");
+  async function onSubmit(data: FormData) {
+    setIsLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", result.token);
+        localStorage.setItem("user", JSON.stringify(result.user));
+        setResult("Giriş başarılı! Yönlendiriliyorsunuz...");
+        setTimeout(() => {
+          router.push("/");
+        }, 100);
+      } else {
+        setResult(result.error || "Giriş sırasında bir hata oluştu");
+      }
+    } catch (error) {
+      setResult("Sunucu hatası oluştu");
+    } finally {
+      setIsLoading(false);
     }
-    form.reset();
   }
 
   return (
@@ -76,8 +94,8 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Giriş Yap
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Giriş Yapılıyor..." : "Giriş Yap"}
             </Button>
             {result && (
               <div
