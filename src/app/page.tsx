@@ -35,7 +35,6 @@ export default function HomePage() {
         setIsAuthenticated(true);
       } else {
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
         setIsAuthenticated(false);
         router.push("/login");
       }
@@ -43,12 +42,6 @@ export default function HomePage() {
       setIsAuthenticated(false);
       router.push("/login");
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/login");
   };
 
   if (isAuthenticated === null) {
@@ -89,9 +82,6 @@ export default function HomePage() {
         <div className="space-y-4">
           <Button onClick={() => router.push("/profile")} className="w-full">
             Profili Düzenle
-          </Button>
-          <Button onClick={handleLogout} variant="outline" className="w-full">
-            Çıkış Yap
           </Button>
         </div>
       </Card>

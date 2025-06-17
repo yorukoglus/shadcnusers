@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 const schema = z.object({
   email: z.string().email("Geçerli bir email girin"),
@@ -27,6 +28,7 @@ export default function LoginPage() {
   const [result, setResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { setIsAuthenticated } = useAuth();
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
@@ -47,7 +49,7 @@ export default function LoginPage() {
 
       if (response.ok) {
         localStorage.setItem("token", result.token);
-        localStorage.setItem("user", JSON.stringify(result.user));
+        setIsAuthenticated(true);
         setResult("Giriş başarılı! Yönlendiriliyorsunuz...");
         setTimeout(() => {
           router.push("/");

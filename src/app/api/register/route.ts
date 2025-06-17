@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { hashPassword } from '@/lib/auth';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { hashPassword, generateToken } from "@/lib/auth";
+import { z } from "zod";
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Ad en az 2 karakter olmalı'),
-  email: z.string().email('Geçerli bir email girin'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalı'),
+  name: z.string().min(2, "Ad en az 2 karakter olmalı"),
+  email: z.string().email("Geçerli bir email girin"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalı"),
 });
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Bu email adresi zaten kullanılıyor' },
+        { error: "Bu email adresi zaten kullanılıyor" },
         { status: 400 }
       );
     }
@@ -41,22 +41,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const token = generateToken(user.id);
+
     return NextResponse.json(
-      { message: 'Kullanıcı başarıyla oluşturuldu', user },
+      { message: "Kullanıcı başarıyla oluşturuldu", user, token },
       { status: 201 }
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Geçersiz veri formatı', details: error.errors },
+        { error: "Geçersiz veri formatı", details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Register error:', error);
-    return NextResponse.json(
-      { error: 'Sunucu hatası' },
-      { status: 500 }
-    );
+    console.error("Register error:", error);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
-} 
+}

@@ -64,7 +64,6 @@ export default function ProfilePage() {
         setIsAuthenticated(true);
       } else {
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
         setIsAuthenticated(false);
         router.push("/login");
       }
@@ -196,6 +195,15 @@ export default function ProfilePage() {
             )}
           </form>
         </Form>
+        <div className="mt-4">
+          <Button
+            onClick={() => router.push("/")}
+            variant="outline"
+            className="w-full"
+          >
+            Anasayfaya Dön
+          </Button>
+        </div>
       </Card>
     </div>
   );

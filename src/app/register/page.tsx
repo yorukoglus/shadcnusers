@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 const schema = z
   .object({
@@ -38,6 +39,7 @@ export default function RegisterPage() {
   const [result, setResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { setIsAuthenticated } = useAuth();
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
@@ -61,10 +63,12 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (response.ok) {
-        setResult("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...");
+        localStorage.setItem("token", result.token);
+        setIsAuthenticated(true);
+        setResult("Kayıt başarılı! Ana sayfaya yönlendiriliyorsunuz...");
         form.reset();
         setTimeout(() => {
-          router.push("/login");
+          router.push("/");
         }, 100);
       } else {
         setResult(result.error || "Kayıt sırasında bir hata oluştu");
