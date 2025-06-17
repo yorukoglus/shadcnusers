@@ -3,23 +3,28 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { useAuth } from "@/lib/auth-context";
 
 export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const router = useRouter();
+  const { isAuthenticated, isMounted } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setIsAuthenticated(false);
+    if (!isMounted) return;
+
+    if (isAuthenticated === false) {
       router.push("/login");
       return;
     }
 
-    fetchUserData(token);
-  }, [router]);
+    if (isAuthenticated) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUserData(token);
+      }
+    }
+  }, [isAuthenticated, isMounted, router]);
 
   const fetchUserData = async (token: string) => {
     try {
@@ -32,19 +37,16 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         setUserData(data.user);
-        setIsAuthenticated(true);
       } else {
         localStorage.removeItem("token");
-        setIsAuthenticated(false);
         router.push("/login");
       }
     } catch (error) {
-      setIsAuthenticated(false);
       router.push("/login");
     }
   };
 
-  if (isAuthenticated === null) {
+  if (!isMounted || isAuthenticated === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         Yükleniyor...

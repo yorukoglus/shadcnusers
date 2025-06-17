@@ -5,14 +5,17 @@ interface AuthContextType {
   isAuthenticated: boolean | null;
   setIsAuthenticated: (value: boolean) => void;
   logout: () => void;
+  isMounted: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
   }, []);
@@ -25,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, setIsAuthenticated, logout }}
+      value={{ isAuthenticated, setIsAuthenticated, logout, isMounted }}
     >
       {children}
     </AuthContext.Provider>

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 const schema = z.object({
   name: z.string().min(2, "Ad en az 2 karakter olmalı"),
@@ -27,9 +28,9 @@ type FormData = z.infer<typeof schema>;
 export default function ProfilePage() {
   const [result, setResult] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const router = useRouter();
+  const { isAuthenticated, isMounted } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -37,15 +38,20 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setIsAuthenticated(false);
+    if (!isMounted) return;
+
+    if (isAuthenticated === false) {
       router.push("/login");
       return;
     }
 
-    fetchUserData(token);
-  }, [router]);
+    if (isAuthenticated) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        fetchUserData(token);
+      }
+    }
+  }, [isAuthenticated, isMounted, router]);
 
   const fetchUserData = async (token: string) => {
     try {
@@ -61,14 +67,11 @@ export default function ProfilePage() {
           email: data.user.email,
           password: "",
         });
-        setIsAuthenticated(true);
       } else {
         localStorage.removeItem("token");
-        setIsAuthenticated(false);
         router.push("/login");
       }
     } catch (error) {
-      setIsAuthenticated(false);
       router.push("/login");
     }
   };
@@ -110,7 +113,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (isAuthenticated === null) {
+  if (!isMounted || isAuthenticated === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         Yükleniyor...

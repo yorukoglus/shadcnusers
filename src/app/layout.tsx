@@ -1,46 +1,65 @@
 "use client";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { usePathname, useRouter } from "next/navigation";
 
 function Header() {
   const { isAuthenticated, logout } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const linkClass = (path: string) => {
+    const baseClass =
+      "cursor-pointer px-3 py-2 rounded-md text-sm font-medium transition-colors";
+    return pathname === path
+      ? `${baseClass} bg-blue-100 text-blue-700`
+      : `${baseClass} text-gray-700 hover:text-blue-600 hover:bg-gray-50`;
+  };
 
   return (
     <header className="w-full bg-white shadow mb-8">
       <nav className="container mx-auto flex items-center justify-between py-4 px-4">
-        <span className="font-bold text-xl">ShadcnUsers</span>
-        <div className="space-x-4">
+        <div className="flex items-center space-x-6">
+          <a className={linkClass("/")} onClick={() => router.push("/")}>
+            <span className="font-bold text-xl">ShadcnUsers</span>
+          </a>
+        </div>
+        <div className="flex items-center space-x-2">
           {!isAuthenticated ? (
             <>
-              <a href="/register" className="text-gray-700 hover:underline">
+              <a
+                className={linkClass("/register")}
+                onClick={() => router.push("/register")}
+              >
                 Kayıt
               </a>
-              <a href="/login" className="text-gray-700 hover:underline">
+              <a
+                className={linkClass("/login")}
+                onClick={() => router.push("/login")}
+              >
                 Giriş
               </a>
             </>
           ) : (
             <>
-              <a href="/profile" className="text-gray-700 hover:underline">
+              <a
+                className={linkClass("/users")}
+                onClick={() => router.push("/users")}
+              >
+                Kullanıcılar
+              </a>
+              <a
+                className={linkClass("/profile")}
+                onClick={() => router.push("/profile")}
+              >
                 Profil
               </a>
-              <button
+              <a
                 onClick={logout}
-                className="text-gray-700 hover:underline bg-transparent border-none cursor-pointer"
+                className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition-colors bg-transparent border-none cursor-pointer"
               >
                 Çıkış
-              </button>
+              </a>
             </>
           )}
         </div>
@@ -56,9 +75,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <AuthProvider>
           <Header />
           {children}
