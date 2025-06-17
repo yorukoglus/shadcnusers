@@ -27,6 +27,22 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header className="w-full bg-white shadow mb-8">
+          <nav className="container mx-auto flex items-center justify-between py-4 px-4">
+            <span className="font-bold text-xl">ShadcnUsers</span>
+            <div className="space-x-4">
+              <a href="/register" className="text-gray-700 hover:underline">
+                Kayıt
+              </a>
+              <a href="/login" className="text-gray-700 hover:underline">
+                Giriş
+              </a>
+              <a href="/profile" className="text-gray-700 hover:underline">
+                Profil
+              </a>
+            </div>
+          </nav>
+        </header>
         {children}
       </body>
     </html>

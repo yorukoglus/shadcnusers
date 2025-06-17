@@ -1,6 +1,41 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-export default function Home() {
+export default function HomePage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const authStatus = localStorage.getItem("isAuthenticated");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+      router.push("/login");
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    router.push("/login");
+  };
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Yükleniyor...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Redirect sırasında boş sayfa göster
+  }
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
