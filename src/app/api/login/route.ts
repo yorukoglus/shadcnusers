@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     const { password: _, ...userWithoutPassword } = user;
 

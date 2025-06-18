@@ -32,16 +32,18 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
+        role: "user",
       },
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
         createdAt: true,
       },
     });
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     return NextResponse.json(
       { message: "Kullanıcı başarıyla oluşturuldu", user, token },

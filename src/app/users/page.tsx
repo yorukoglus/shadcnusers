@@ -9,6 +9,7 @@ import {
   ModuleRegistry,
   AllCommunityModule,
 } from "ag-grid-community";
+import { useAuth } from "@/lib/auth-context";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -16,11 +17,13 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export default function UsersPage() {
+  const { role: myRole } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +57,18 @@ export default function UsersPage() {
         flex: 1,
       },
       {
+        field: "role",
+        headerName: "Rol",
+        sortable: true,
+        filter: true,
+        resizable: true,
+        flex: 1,
+        editable: myRole === "admin",
+        cellEditor: myRole === "admin" ? "agSelectCellEditor" : undefined,
+        cellEditorParams:
+          myRole === "admin" ? { values: ["user", "admin"] } : undefined,
+      },
+      {
         field: "createdAt",
         headerName: "Kayıt Tarihi",
         sortable: true,
@@ -72,7 +87,7 @@ export default function UsersPage() {
         valueFormatter: formatDate,
       },
     ],
-    []
+    [myRole]
   );
 
   const defaultColDef = useMemo(
@@ -101,6 +116,32 @@ export default function UsersPage() {
 
   const onGridReady = (params: GridReadyEvent) => {
     params.api.sizeColumnsToFit();
+  };
+
+  const onCellValueChanged = async (params: any) => {
+    if (params.colDef.field === "role" && myRole === "admin") {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("/api/users", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId: params.data.id,
+            role: params.data.role,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error("Rol güncellenemedi");
+        }
+      } catch (err) {
+        alert(
+          "Rol güncellenemedi: " + (err instanceof Error ? err.message : "")
+        );
+      }
+    }
   };
 
   if (loading) {
@@ -157,6 +198,7 @@ export default function UsersPage() {
                 columnDefs={columnDefs}
                 defaultColDef={defaultColDef}
                 onGridReady={onGridReady}
+                onCellValueChanged={onCellValueChanged}
                 pagination={true}
                 paginationPageSize={10}
                 paginationPageSizeSelector={[5, 10, 20, 50]}
