@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { MoreVertical } from "lucide-react";
-import EditUserModal from "./EditUserModal";
+import UserModal from "./UserModal";
+import { toast } from "sonner";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -37,7 +38,9 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState<
+    "add" | "edit" | undefined
+  >();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const formatDate = (params: { value: string }) => {
@@ -124,9 +127,7 @@ export default function UsersPage() {
                 <DropdownMenuItem onClick={() => handleEditClick(params.data)}>
                   Düzenle
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => alert(`Sil: ${params.data.name}`)}
-                >
+                <DropdownMenuItem onClick={() => handleDeleteUser(params.data)}>
                   Sil
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -150,22 +151,24 @@ export default function UsersPage() {
     []
   );
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/users");
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/users");
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
       }
-    };
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchUsers();
   }, []);
 
@@ -201,13 +204,46 @@ export default function UsersPage() {
 
   const handleEditClick = (user: User) => {
     setSelectedUser(user);
-    setEditModalOpen(true);
+    setUserModalOpen("edit");
   };
 
   const handleUserUpdated = (updatedUser: User) => {
     setUsers((prev) =>
       prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
     );
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (
+      !window.confirm(
+        `${user.name} kullanıcısını silmek istediğinize emin misiniz?`
+      )
+    )
+      return;
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("/api/users", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (!response.ok) {
+        throw new Error("Kullanıcı silinemedi");
+      }
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      toast.success("Kullanıcı başarıyla silindi");
+    } catch (err) {
+      toast.error(
+        "Kullanıcı silinemedi: " + (err instanceof Error ? err.message : "")
+      );
+    }
+  };
+
+  const handleUserAdded = () => {
+    fetchUsers();
   };
 
   if (loading) {
@@ -247,8 +283,18 @@ export default function UsersPage() {
   return (
     <div className="container mx-auto py-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Kullanıcılar ({users.length})</CardTitle>
+          {myRole === "admin" && (
+            <Button
+              onClick={() => {
+                setUserModalOpen("add");
+                setSelectedUser(null);
+              }}
+            >
+              + Kullanıcı Ekle
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
@@ -275,13 +321,14 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
-      <EditUserModal
-        open={editModalOpen}
+      <UserModal
+        open={userModalOpen}
         onOpenChange={(open) => {
-          setEditModalOpen(open);
+          setUserModalOpen(open);
           if (!open) setSelectedUser(null);
         }}
-        user={selectedUser}
+        user={userModalOpen === "edit" ? selectedUser : null}
+        onUserAdded={handleUserAdded}
         onUserUpdated={handleUserUpdated}
       />
     </div>

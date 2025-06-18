@@ -72,3 +72,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader) {
+      return NextResponse.json({ error: "Yetkisiz" }, { status: 401 });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const payload = verifyToken(token);
+    if (!payload || payload.role !== "admin") {
+      return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
+    }
+    const { userId } = await request.json();
+    if (!userId) {
+      return NextResponse.json({ error: "Eksik veri" }, { status: 400 });
+    }
+    await prisma.user.delete({ where: { id: userId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
+  }
+}
