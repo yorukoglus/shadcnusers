@@ -8,6 +8,7 @@ interface AuthContextType {
   logout: () => void;
   isMounted: boolean;
   role: string | null;
+  login: (token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +34,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const login = (token: string) => {
+    localStorage.setItem("token", token);
+    setIsAuthenticated(true);
+    try {
+      const decoded = jwt.decode(token) as { role?: string };
+      setRole(decoded?.role || null);
+    } catch {
+      setRole(null);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
@@ -48,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         isMounted,
         role,
+        login,
       }}
     >
       {children}

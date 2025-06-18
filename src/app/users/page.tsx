@@ -63,6 +63,7 @@ export default function UsersPage() {
         filter: true,
         resizable: true,
         flex: 1,
+        cellClass: myRole === "admin" ? "bg-gray-100" : "",
         editable: myRole === "admin",
         cellEditor: myRole === "admin" ? "agSelectCellEditor" : undefined,
         cellEditorParams:
