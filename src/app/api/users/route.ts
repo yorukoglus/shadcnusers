@@ -39,13 +39,24 @@ export async function PATCH(request: NextRequest) {
     if (!payload || payload.role !== "admin") {
       return NextResponse.json({ error: "Yetkisiz" }, { status: 403 });
     }
-    const { userId, role } = await request.json();
-    if (!userId || !role) {
+    const { userId, role, name, email } = await request.json();
+    if (!userId) {
       return NextResponse.json({ error: "Eksik veri" }, { status: 400 });
+    }
+    const updateData: any = {
+      ...(role && { role }),
+      ...(name && { name }),
+      ...(email && { email }),
+    };
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: "Güncellenecek veri yok" },
+        { status: 400 }
+      );
     }
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -57,7 +68,7 @@ export async function PATCH(request: NextRequest) {
     });
     return NextResponse.json(updatedUser);
   } catch (error) {
-    console.error("Error updating user role:", error);
+    console.error("Error updating user:", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

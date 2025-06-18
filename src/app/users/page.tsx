@@ -10,6 +10,16 @@ import {
   AllCommunityModule,
 } from "ag-grid-community";
 import { useAuth } from "@/lib/auth-context";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { MoreVertical } from "lucide-react";
+import EditUserModal from "./EditUserModal";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -27,6 +37,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const formatDate = (params: { value: string }) => {
     return new Date(params.value).toLocaleDateString("tr-TR", {
@@ -38,8 +50,8 @@ export default function UsersPage() {
     });
   };
 
-  const columnDefs: ColDef[] = useMemo(
-    () => [
+  const columnDefs: ColDef[] = useMemo(() => {
+    const baseColumns = [
       {
         field: "name",
         headerName: "Ad Soyad",
@@ -63,6 +75,13 @@ export default function UsersPage() {
         filter: true,
         resizable: true,
         flex: 1,
+        cellRenderer: (params: any) => {
+          return (
+            <Badge variant={params.value === "admin" ? "default" : "secondary"}>
+              {params.value}
+            </Badge>
+          );
+        },
         cellClass: myRole === "admin" ? "bg-gray-100" : "",
         editable: myRole === "admin",
         cellEditor: myRole === "admin" ? "agSelectCellEditor" : undefined,
@@ -87,9 +106,44 @@ export default function UsersPage() {
         flex: 1,
         valueFormatter: formatDate,
       },
-    ],
-    [myRole]
-  );
+    ];
+    if (myRole === "admin") {
+      baseColumns.push({
+        headerName: "",
+        field: "actions",
+        flex: 0.3,
+        cellRenderer: (params: any) => {
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleEditClick(params.data)}>
+                  Düzenle
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => alert(`Sil: ${params.data.name}`)}
+                >
+                  Sil
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+        sortable: false,
+        filter: false,
+        resizable: false,
+        cellClass: "",
+        editable: false,
+        cellEditor: undefined,
+        cellEditorParams: undefined,
+      });
+    }
+    return baseColumns;
+  }, [myRole]);
 
   const defaultColDef = useMemo(
     () => ({ sortable: true, filter: true, resizable: true }),
@@ -143,6 +197,17 @@ export default function UsersPage() {
         );
       }
     }
+  };
+
+  const handleEditClick = (user: User) => {
+    setSelectedUser(user);
+    setEditModalOpen(true);
+  };
+
+  const handleUserUpdated = (updatedUser: User) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+    );
   };
 
   if (loading) {
@@ -210,6 +275,15 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+      <EditUserModal
+        open={editModalOpen}
+        onOpenChange={(open) => {
+          setEditModalOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onUserUpdated={handleUserUpdated}
+      />
     </div>
   );
 }

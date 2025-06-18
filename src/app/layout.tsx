@@ -2,6 +2,7 @@
 import "./globals.css";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { usePathname, useRouter } from "next/navigation";
+import { Toaster } from "@/components/ui/sonner";
 
 function Header() {
   const { isAuthenticated, logout } = useAuth();
@@ -80,6 +81,7 @@ export default function RootLayout({
           <Header />
           {children}
         </AuthProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
