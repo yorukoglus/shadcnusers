@@ -24,7 +24,7 @@ export default function HomePage() {
         fetchUserData(token);
       }
     }
-  }, [isAuthenticated, isMounted, router]);
+  }, [isAuthenticated, isMounted, router]); //eslint-disable-line
 
   const fetchUserData = async (token: string) => {
     try {
@@ -41,7 +41,7 @@ export default function HomePage() {
         localStorage.removeItem("token");
         router.push("/login");
       }
-    } catch (error) {
+    } catch {
       router.push("/login");
     }
   };

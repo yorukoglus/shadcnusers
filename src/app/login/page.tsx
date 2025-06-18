@@ -56,7 +56,7 @@ export default function LoginPage() {
       } else {
         setResult(result.error || "Giriş sırasında bir hata oluştu");
       }
-    } catch (error) {
+    } catch {
       setResult("Sunucu hatası oluştu");
     } finally {
       setIsLoading(false);

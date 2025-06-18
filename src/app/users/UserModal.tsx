@@ -85,7 +85,7 @@ export default function UserModal({
           throw new Error(data?.error || "Kullanıcı eklenemedi");
         }
         const newUser = await response.json();
-        onUserAdded && onUserAdded(newUser);
+        onUserAdded?.(newUser);
         toast.success("Kullanıcı başarıyla eklendi");
         onOpenChange(undefined);
       } else if (mode === "edit" && user) {
@@ -112,7 +112,7 @@ export default function UserModal({
           role: form.role,
           updatedAt: new Date().toISOString(),
         };
-        onUserUpdated && onUserUpdated(updatedUser);
+        onUserUpdated?.(updatedUser);
         toast.success("Kullanıcı başarıyla güncellendi");
         onOpenChange(undefined);
       }

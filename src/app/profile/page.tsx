@@ -51,7 +51,7 @@ export default function ProfilePage() {
         fetchUserData(token);
       }
     }
-  }, [isAuthenticated, isMounted, router]);
+  }, [isAuthenticated, isMounted, router]); //eslint-disable-line
 
   const fetchUserData = async (token: string) => {
     try {

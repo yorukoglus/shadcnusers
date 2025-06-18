@@ -73,7 +73,7 @@ export default function RegisterPage() {
       } else {
         setResult(result.error || "Kayıt sırasında bir hata oluştu");
       }
-    } catch (error) {
+    } catch {
       setResult("Sunucu hatası oluştu");
     } finally {
       setIsLoading(false);
